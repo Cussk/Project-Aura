@@ -39,6 +39,15 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	UFUNCTION(BlueprintCallable)
+		void ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGameplayEffect> GameplayEffectClass);
+
+	UFUNCTION(BlueprintCallable)
+		void OnOverlap(AActor* TargetActor);
+
+	UFUNCTION(BlueprintCallable)
+		void OnEndOverlap(AActor* TargetActor);
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
 	TSubclassOf<UGameplayEffect> InstantGameplayEffectClass;
 
@@ -59,16 +68,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
 		EEffectRemovalPolicy InfiniteEffectRemovalPolicy = EEffectRemovalPolicy::RemoveOnEndOverlap;
 
-	UFUNCTION(BlueprintCallable)
-	void ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGameplayEffect> GameplayEffectClass);
-
-	UFUNCTION(BlueprintCallable)
-	void OnOverlap(AActor* TargetActor);
-
-	UFUNCTION(BlueprintCallable)
-	void OnEndOverlap(AActor* TargetActor);
 
 	TMap<FActiveGameplayEffectHandle, UAbilitySystemComponent*> ActiveEffectHandles;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
+		float ActorLevel = 1.0f;
 
 
 };
