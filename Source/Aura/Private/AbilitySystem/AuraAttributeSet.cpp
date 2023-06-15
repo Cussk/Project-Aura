@@ -115,6 +115,17 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	//Draw props values from GameplayEffect Data
 	SetEffectProperties(Data, Props);
 
+	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+	{
+		//sets health value within clamp range
+		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
+	}
+	if (Data.EvaluatedData.Attribute == GetManaAttribute())
+	{
+		//sets mana value within clamp range
+		SetMana(FMath::Clamp(GetMana(), 0.0f, GetMaxMana()));
+	}
+
 	//attribute data changes from GameplayEffect
 	/*if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
