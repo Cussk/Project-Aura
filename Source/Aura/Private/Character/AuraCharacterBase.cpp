@@ -36,17 +36,22 @@ void AAuraCharacterBase::InitAbilityActorInfo()
 //gameplay effect to initialize attributes
 void AAuraCharacterBase::ApplyEffectToSelf(TSubclassOf<UGameplayEffect> GameplayEffectClass, float Level) const
 {
-	//Apply Gameplay Effect Spec BOiler Plate
+	//Apply Gameplay Effect Spec Boiler Plate
 	check(IsValid(GetAbilitySystemComponent())); //check null
 	check(GameplayEffectClass); //check null
-	const FGameplayEffectContextHandle ContextHandle = GetAbilitySystemComponent()->MakeEffectContext();
+
+	FGameplayEffectContextHandle ContextHandle = GetAbilitySystemComponent()->MakeEffectContext();
+	//add character as source object
+	ContextHandle.AddSourceObject(this);
+
 	const FGameplayEffectSpecHandle SpecHandle = GetAbilitySystemComponent()->MakeOutgoingSpec(GameplayEffectClass, Level, ContextHandle);
 	GetAbilitySystemComponent()->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), GetAbilitySystemComponent());
 }
 
-//call GE fot default attribute values
+//call GE for default attribute values
 void AAuraCharacterBase::InitializeDefaultAttributes() const
 {
 	ApplyEffectToSelf(DefaultPrimaryAttributes, 1.0f);
 	ApplyEffectToSelf(DefaultSecondaryAttributes, 1.0f);
+	ApplyEffectToSelf(DefaultVitalAttributes, 1.0f);
 }
