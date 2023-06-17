@@ -24,6 +24,12 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
+	/* COMBAT INTERFACE */
+
+	virtual int32 GetPlayerLevel() override;
+
+	/* END COMBAT INTERFACE*/
+
 protected:
 
 	UPROPERTY(VisibleAnywhere)
