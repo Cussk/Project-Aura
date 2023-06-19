@@ -33,3 +33,16 @@ void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* Ability
     //Broadcast TagContainer to anything bound to this delegate
     EffectAssetTags.Broadcast(TagContainer);
 }
+
+void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities)
+{
+    for (TSubclassOf<UGameplayAbility> AbilityClass : StartupAbilities)
+    {
+        //gets ability information
+        FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1.0f);
+
+        //grant ability to actor
+        //GiveAbility(AbilitySpec);
+        GiveAbilityAndActivateOnce(AbilitySpec);
+    }
+}

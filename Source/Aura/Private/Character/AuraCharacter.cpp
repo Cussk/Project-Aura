@@ -50,7 +50,8 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 
 	//Init Ability Actor Info for Server
 	InitAbilityActorInfo();
-
+	//Add abilities from ASC
+	AddCharacterAbilities();
 }
 
 //Calls when player state has been replicated from server
