@@ -48,7 +48,7 @@ void UAttributeMenuWidgetController::BroadcastInitialValues()
 	}
 }
 
-void UAttributeMenuWidgetController::BroadcastAttributeInfo(const FGameplayTag& GameplayTag, const FGameplayAttribute& Attribute)
+void UAttributeMenuWidgetController::BroadcastAttributeInfo(const FGameplayTag& GameplayTag, const FGameplayAttribute& Attribute) const
 {
 	//get attribute tag from map
 	FAuraAttributeInfo Info = AttributeInfo->FindAttributeInfoForTag(GameplayTag);
