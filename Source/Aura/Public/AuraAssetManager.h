@@ -18,5 +18,9 @@ public:
 
 	//gets one and only instance of AssetManager
 	static UAuraAssetManager& Get();
+
+protected:
+
+	virtual void StartInitialLoading() override;
 	
 };
