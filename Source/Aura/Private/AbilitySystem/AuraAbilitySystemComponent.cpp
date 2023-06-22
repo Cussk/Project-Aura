@@ -4,6 +4,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 
 #include "AuraGameplayTags.h"
+#include "AbilitySystem/Ability/AuraGameplayAbility.h"
 
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {
@@ -36,13 +37,59 @@ void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* Ability
 
 void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities)
 {
-    for (TSubclassOf<UGameplayAbility> AbilityClass : StartupAbilities)
+    for (const TSubclassOf<UGameplayAbility> AbilityClass : StartupAbilities)
     {
         //gets ability information
         FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1.0f);
 
-        //grant ability to actor
-        //GiveAbility(AbilitySpec);
-        GiveAbilityAndActivateOnce(AbilitySpec);
+        //get aura gameplay ability through ability spec
+        if (const UAuraGameplayAbility* AuraAbility = Cast<UAuraGameplayAbility>(AbilitySpec.Ability)) // check null
+        {
+            //add startup tag to dynamic tag container
+            AbilitySpec.DynamicAbilityTags.AddTag(AuraAbility->StartupInputTag);
+
+            //grant ability to actor
+            GiveAbility(AbilitySpec);
+        }
+    }
+}
+
+void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
+{
+    if (!InputTag.IsValid()) return;
+
+    //loop through avtivable abilities in the Ability spec array
+    for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+    {
+
+        //check if AbilitySpec has exact match to InputTag
+	    if (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+	    {
+            //bool switched when plyer input is pressed
+            AbilitySpecInputPressed(AbilitySpec);
+
+            //if ability is not already active
+		    if (!AbilitySpec.IsActive())
+		    {
+                //try to use ability
+                TryActivateAbility(AbilitySpec.Handle);
+		    }
+	    }
+    }
+}
+
+void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
+{
+    if (!InputTag.IsValid()) return;
+
+    //loop through avtivable abilities in the Ability spec array
+    for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+    {
+        //check if AbilitySpec has exact match to InputTag
+        if (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+        {
+            //bool switched when plyer input is pressed
+            AbilitySpecInputReleased(AbilitySpec);
+        }
     }
 }
