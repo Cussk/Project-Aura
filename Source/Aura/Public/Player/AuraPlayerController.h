@@ -12,6 +12,7 @@ class UInputAction;
 class IEnemyInterface;
 class UAuraInputConfig;
 class UAuraAbilitySystemComponent;
+class USplineComponent;
 struct FInputActionValue;
 
 
@@ -54,6 +55,8 @@ private:
 	IEnemyInterface* LastActor;
 	IEnemyInterface* ThisActor;
 
+	FHitResult CursorHit;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UAuraInputConfig> InputConfig;
 
@@ -61,4 +64,23 @@ private:
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 
 	UAuraAbilitySystemComponent* GetAbilitySystemComponent();
+
+	/* CLICK TO MOVE */
+	FVector CachedDestination = FVector::ZeroVector;
+
+	float FollowTime = 0.0f;
+
+	float ShortPressThreshold = 0.5f;
+
+	bool bAutoRunning = false;
+
+	bool bTargeting = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ClickToMove")
+	float AutoRunAcceptanceRadius = 50.0f;
+
+	UPROPERTY(VisibleAnywhere, Category = "ClickToMove")
+	TObjectPtr<USplineComponent> Spline;
+
+	void AutoRun();
 };

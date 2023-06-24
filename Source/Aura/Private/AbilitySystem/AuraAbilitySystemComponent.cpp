@@ -9,7 +9,7 @@
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {
     //bind to delegate
-    OnGameplayEffectAppliedDelegateToSelf.AddUObject(this, &UAuraAbilitySystemComponent::EffectApplied);
+    OnGameplayEffectAppliedDelegateToSelf.AddUObject(this, &UAuraAbilitySystemComponent::ClientEffectApplied);
 
     //get gameplay tags singleton
    /* const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
@@ -22,7 +22,8 @@ void UAuraAbilitySystemComponent::AbilityActorInfoSet()
     );*/
 }
 
-void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* AbilitySystemComponent,
+//client rpc, called on server replicated to client
+void UAuraAbilitySystemComponent::ClientEffectApplied_Implementation(UAbilitySystemComponent* AbilitySystemComponent,
                                                 const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle ActiveEffectHandle)
 {
     //GEngine->AddOnScreenDebugMessage(1, 80.f, FColor::Blue, FString("Effect Applied!"));

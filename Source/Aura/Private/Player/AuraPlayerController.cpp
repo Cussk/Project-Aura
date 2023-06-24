@@ -9,8 +9,15 @@
 #include "Interaction/EnemyInterface.h"
 #include <AbilitySystem/AuraAbilitySystemComponent.h>
 
+#include "AuraGameplayTags.h"
+#include "NavigationPath.h"
+#include "NavigationSystem.h"
+#include "Components/SplineComponent.h"
+
 AAuraPlayerController::AAuraPlayerController()
 {
+	Spline = CreateDefaultSubobject<USplineComponent>("Spline");
+
 	bReplicates = true;
 }
 
@@ -19,11 +26,39 @@ void AAuraPlayerController::PlayerTick(float DeltaTime)
 	Super::PlayerTick(DeltaTime);
 
 	CursorTrace();
+
+	AutoRun();
+}
+
+void AAuraPlayerController::AutoRun()
+{
+	if (!bAutoRunning) return;
+
+	//check if Pawn is a player pawn
+	if (APawn* ControlledPawn = GetPawn())
+	{
+		//location on spline closest to players position
+		const FVector LocationOnSpline = Spline->FindDirectionClosestToWorldLocation(ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
+		//direction for spline point
+		const FVector Direction = Spline->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
+
+		//move pawn in direction of spline point
+		ControlledPawn->AddMovementInput(Direction);
+
+		//length of distance between cursor hit point and spline point location 
+		const float DistanceToDestination = (LocationOnSpline - CachedDestination).Length();
+
+		//if within acceptance radius distance
+		if (DistanceToDestination <= AutoRunAcceptanceRadius)
+		{
+			//stop movement
+			bAutoRunning = false;
+		}
+	}
 }
 
 void AAuraPlayerController::CursorTrace()
 {
-	FHitResult CursorHit;
 	GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
 	if (!CursorHit.bBlockingHit) return;
 
@@ -31,6 +66,12 @@ void AAuraPlayerController::CursorTrace()
 
 	//if actor under cursor has IEnemyInterface will get that actor, otherwise will be null
 	ThisActor = Cast<IEnemyInterface>(CursorHit.GetActor());
+
+	if (LastActor != ThisActor)
+	{
+		if (LastActor) LastActor->UnhighlightActor();
+		if (ThisActor) ThisActor->HighlightActor();
+	}
 
 	/*
 	 *Line case from cursor. Multiple results
@@ -45,7 +86,7 @@ void AAuraPlayerController::CursorTrace()
 	 * E. Both actors valid && LastActor = THisActor
 	 *      -Do nothing
 	 *
-	 */
+	 
 
 	if (LastActor == nullptr)
 	{
@@ -79,11 +120,20 @@ void AAuraPlayerController::CursorTrace()
 				//Case E - LastActor = ThisActor, do nothing
 			}
 		}
-	}
+	}*/
 }
 
 void AAuraPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
 {
+	//if input tag is left mouse button
+	if (InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	{
+		//if ThisActor is not nullptr true else false
+		bTargeting = ThisActor ? true : false;
+
+		bAutoRunning = false;
+	}
+
 	//GEngine->AddOnScreenDebugMessage(1, 3.f, FColor::Red, *InputTag.ToString());
 }
 
@@ -91,16 +141,108 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 {
 	//GEngine->AddOnScreenDebugMessage(2, 3.f, FColor::Blue, *InputTag.ToString());
 
-	if (GetAbilitySystemComponent() == nullptr) return;
-	GetAbilitySystemComponent()->AbilityInputTagReleased(InputTag);
+	//if input tag is not left mouse button
+	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	{
+		if (GetAbilitySystemComponent()) //check null
+		{
+			//use released action ability of chosen input tag
+			GetAbilitySystemComponent()->AbilityInputTagReleased(InputTag);
+		}
+
+		return;
+	}
+
+	if (bTargeting) //use ability
+	{
+		if (GetAbilitySystemComponent()) //check null
+		{
+			//use released action ability of chosen input tag
+			GetAbilitySystemComponent()->AbilityInputTagReleased(InputTag);
+		}
+	}
+	else //perform movement
+	{
+		const APawn* ControlledPawn = GetPawn();
+		//was click a short press
+		if (FollowTime <= ShortPressThreshold && ControlledPawn)
+		{
+			//get navigation path
+			if (UNavigationPath* NavigationPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, ControlledPawn->GetActorLocation(), CachedDestination))
+			{
+				//clear previous spline points before loop
+				Spline->ClearSplinePoints();
+
+				//loop through location points in the navigation path
+				for (const FVector& PointLocation : NavigationPath->PathPoints)
+				{
+					//add point to spline
+					Spline->AddSplinePoint(PointLocation, ESplineCoordinateSpace::World);
+
+					DrawDebugSphere(GetWorld(), PointLocation, 8.0f, 8, FColor::Green, false, 5.0f);
+				}
+
+				//set CachedDestination to last point in NavigationPath
+				CachedDestination = NavigationPath->PathPoints[NavigationPath->PathPoints.Num() - 1];
+
+				bAutoRunning = true;
+			}
+		}
+
+		//reset movement variables
+		FollowTime = 0.0f;
+		bTargeting = false;
+	}
 }
 
 void AAuraPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 {
+
+	//if input tag is not left mouse button
+	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	{
+		if (GetAbilitySystemComponent()) //check null
+		{
+			//use the held action ability of chosen input tag
+			GetAbilitySystemComponent()->AbilityInputTagHeld(InputTag);
+		}
+
+		return;
+	}
+
+	if (bTargeting) //use ability
+	{
+		if (GetAbilitySystemComponent()) //check null
+		{
+			//use the held action ability of chosen input tag
+			GetAbilitySystemComponent()->AbilityInputTagHeld(InputTag);
+		}
+	}
+	else //perform movement
+	{
+		//increment follow time with delta seconds as long as LMB is held 
+		FollowTime += GetWorld()->GetDeltaSeconds();
+
+		//Gets hit result from location of mouse cursor in the world
+		if (CursorHit.bBlockingHit)
+		{
+			//cache the point where the hit occurs in world
+			CachedDestination = CursorHit.ImpactPoint;
+		}
+
+		//check if controlled pawn is player pawn
+		if (APawn* ControlledPawn = GetPawn())
+		{
+			//destination for movement, vector between world hit and actors beginning location
+			const FVector WorldDestination = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+			//move pawn to destination
+			ControlledPawn->AddMovementInput(WorldDestination);
+		}
+	}
+
 	//GEngine->AddOnScreenDebugMessage(3, 3.f, FColor::Green, *InputTag.ToString());
 
-	if (GetAbilitySystemComponent() == nullptr) return;
-	GetAbilitySystemComponent()->AbilityInputTagHeld(InputTag);
+	
 }
 
 UAuraAbilitySystemComponent* AAuraPlayerController::GetAbilitySystemComponent()
