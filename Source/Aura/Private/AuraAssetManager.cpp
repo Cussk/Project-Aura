@@ -3,6 +3,7 @@
 
 #include "AuraAssetManager.h"
 #include "AuraGameplayTags.h"
+#include <AbilitySystemGlobals.h>
 
 UAuraAssetManager& UAuraAssetManager::Get()
 {
@@ -21,4 +22,7 @@ void UAuraAssetManager::StartInitialLoading()
 
 	//initialize gameplay tags that have been defined
 	FAuraGameplayTags::InitializeNativeGameplayTags();
+
+	//This is required to use Target Date, initializes Gameplay Ability system global data
+	UAbilitySystemGlobals::Get().InitGlobalData();
 }

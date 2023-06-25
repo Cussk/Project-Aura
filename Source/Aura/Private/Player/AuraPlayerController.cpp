@@ -38,7 +38,7 @@ void AAuraPlayerController::AutoRun()
 	if (APawn* ControlledPawn = GetPawn())
 	{
 		//location on spline closest to players position
-		const FVector LocationOnSpline = Spline->FindDirectionClosestToWorldLocation(ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
+		const FVector LocationOnSpline = Spline->FindLocationClosestToWorldLocation(ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
 		//direction for spline point
 		const FVector Direction = Spline->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
 
@@ -67,6 +67,7 @@ void AAuraPlayerController::CursorTrace()
 	//if actor under cursor has IEnemyInterface will get that actor, otherwise will be null
 	ThisActor = Cast<IEnemyInterface>(CursorHit.GetActor());
 
+	//highlight actor based on cases
 	if (LastActor != ThisActor)
 	{
 		if (LastActor) LastActor->UnhighlightActor();
@@ -153,15 +154,13 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 		return;
 	}
 
-	if (bTargeting) //use ability
+	if (GetAbilitySystemComponent()) //check null
 	{
-		if (GetAbilitySystemComponent()) //check null
-		{
-			//use released action ability of chosen input tag
-			GetAbilitySystemComponent()->AbilityInputTagReleased(InputTag);
-		}
+		//use released action ability of chosen input tag
+		GetAbilitySystemComponent()->AbilityInputTagReleased(InputTag);
 	}
-	else //perform movement
+
+	if (!bTargeting || !bShiftKeyDown) //perform autorun movement
 	{
 		const APawn* ControlledPawn = GetPawn();
 		//was click a short press
@@ -210,7 +209,7 @@ void AAuraPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 		return;
 	}
 
-	if (bTargeting) //use ability
+	if (bTargeting || bShiftKeyDown) //use ability
 	{
 		if (GetAbilitySystemComponent()) //check null
 		{
@@ -294,6 +293,10 @@ void AAuraPlayerController::SetupInputComponent()
 
 	//binds action varibles to action functions
 	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
+	
+	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPressed);
+	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
+
 	//bind to input type function
 	AuraInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::AbilityInputTagPressed, &ThisClass::AbilityInputTagReleased, &ThisClass::AbilityInputTagHeld);
 }
