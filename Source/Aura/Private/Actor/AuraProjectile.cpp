@@ -60,6 +60,14 @@ void AAuraProjectile::Destroyed()
 
 		LoopingSoundComponent->Stop();
 	}
+
+	//stop looping sound when projectile lifespan expires
+	if (LoopingSoundComponent)
+	{
+		LoopingSoundComponent->Stop();
+		LoopingSoundComponent->DestroyComponent();
+	}
+
 	Super::Destroyed();
 }
 
