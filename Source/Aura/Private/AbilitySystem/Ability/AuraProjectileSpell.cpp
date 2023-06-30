@@ -7,6 +7,7 @@
 #include "AbilitySystemComponent.h"
 #include "Actor/AuraProjectile.h"
 #include "Interaction/CombatInterface.h"
+#include "Aura/Public/AuraGameplayTags.h"
 
 
 void UAuraProjectileSpell::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -55,6 +56,17 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 
         //make gameplay effect spec handle for DamageEffectClass
         const FGameplayEffectSpecHandle SpecHandle = SourceAbilitySystemComponent->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), SourceAbilitySystemComponent->MakeEffectContext());
+
+        //get gameplay tags
+        FAuraGameplayTags GameplayTags = FAuraGameplayTags::Get();
+
+        //get damage value from curve table based on ability level
+        const float ScaledDamage = Damage.GetValueAtLevel(GetAbilityLevel());
+
+        //GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, FString::Printf(TEXT("Firebolt Damage: %f"), ScaledDamage));
+
+        //key value pair gameplay tag and magnitude for damage value
+        UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, GameplayTags.Damage, ScaledDamage);
 
         //set DamageEffectSpecHandle
         Projectile->DamageEffectSpecHandle = SpecHandle;

@@ -111,3 +111,24 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* World
 	//applies Vital attributes to owner of ASC
 	AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*VitalAttributesEffectSpecHandle.Data.Get());
 }
+
+void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContextObject,
+	UAbilitySystemComponent* AbilitySystemComponent)
+{
+	//get aura game mode base
+	AAuraGameModeBase* AuraGameModeBase = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	if (AuraGameModeBase == nullptr) return;
+
+	//get characterclassinfo class
+	UCharacterClassInfo* CharacterClassInfo = AuraGameModeBase->CharacterClassInfo;
+
+	//loop through array of common abilities to all enemies
+	for (TSubclassOf<UGameplayAbility> AbilityClass : CharacterClassInfo->CommonAbilities)
+	{
+		//gets ability information
+		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1.0f);
+
+		//grants ability to enemy
+		AbilitySystemComponent->GiveAbility(AbilitySpec);
+	}
+}

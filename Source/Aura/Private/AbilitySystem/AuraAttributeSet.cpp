@@ -200,7 +200,7 @@ void UAuraAttributeSet::SetEffectProperties(const FGameplayEffectModCallbackData
 			Props.TargetAvatarActor = Data.Target.AbilityActorInfo->AvatarActor.Get();
 			Props.TargetController = Data.Target.AbilityActorInfo->PlayerController.Get();
 			Props.TargetCharacter = Cast<ACharacter>(Props.TargetAvatarActor);
-			UAbilitySystemComponent* TargetAbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Props.TargetAvatarActor);
+			Props.TargetAbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Props.TargetAvatarActor);
 		}
 	}
 }
@@ -226,6 +226,36 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	{
 		//sets mana value within clamp range
 		SetMana(FMath::Clamp(GetMana(), 0.0f, GetMaxMana()));
+	}
+
+	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
+	{
+		//get local value for incoming damage
+		const float LocalIncomingDamage = GetIncomingDamage();
+
+		//reset incoming damage value
+		SetIncomingDamage(0.0f);
+
+		if (LocalIncomingDamage > 0.0f)
+		{
+			//get health value after damage applied
+			const float NewHealth = GetHealth() - LocalIncomingDamage;
+			//Set health attribute to value of NewHealth clamped
+			SetHealth(FMath::Clamp(NewHealth, 0.0f, GetMaxHealth()));
+
+			//character dies if newhealth 0 or less
+			const bool bFatal = NewHealth <= 0.0f;
+
+			if (!bFatal)
+			{
+				//create tag container
+				FGameplayTagContainer TagContainer;
+				//add hit reaction tage to container
+				TagContainer.AddTag(FAuraGameplayTags::Get().Effects_HitReaction);
+				//activate ability if it has hit reaction tag
+				Props.TargetAbilitySystemComponent->TryActivateAbilitiesByTag(TagContainer);
+			}
+		}
 	}
 
 	//attribute data changes from GameplayEffect
