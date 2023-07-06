@@ -61,7 +61,7 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
         FAuraGameplayTags GameplayTags = FAuraGameplayTags::Get();
 
         //get damage value from curve table based on ability level
-        const float ScaledDamage = Damage.GetValueAtLevel(GetAbilityLevel());
+        const float ScaledDamage = Damage.GetValueAtLevel(10);
 
         //GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, FString::Printf(TEXT("Firebolt Damage: %f"), ScaledDamage));
 

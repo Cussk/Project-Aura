@@ -45,7 +45,12 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	float BaseWalkSpeed = 250.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	float Lifespan = 5.0f;
+
 	void HitReactionTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
+
+	virtual  void Die() override;
 
 protected:
 

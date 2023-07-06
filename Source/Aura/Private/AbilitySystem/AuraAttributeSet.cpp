@@ -8,6 +8,9 @@
 #include "GameplayEffectExtension.h"
 #include "GameFramework/Character.h"
 #include "AuraGameplayTags.h"
+#include "Interaction/CombatInterface.h"
+#include "Kismet/GameplayStatics.h"
+#include "Player/AuraPlayerController.h"
 
 UAuraAttributeSet::UAuraAttributeSet()
 {
@@ -246,7 +249,16 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			//character dies if newhealth 0 or less
 			const bool bFatal = NewHealth <= 0.0f;
 
-			if (!bFatal)
+			if (bFatal)
+			{
+				ICombatInterface* CombatInterface = Cast<ICombatInterface>(Props.TargetAvatarActor);
+
+				if (CombatInterface) //check null
+				{
+					CombatInterface->Die();
+				}
+			}
+			else
 			{
 				//create tag container
 				FGameplayTagContainer TagContainer;
@@ -255,14 +267,22 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 				//activate ability if it has hit reaction tag
 				Props.TargetAbilitySystemComponent->TryActivateAbilitiesByTag(TagContainer);
 			}
+
+			ShowFloatingDamage(Props, LocalIncomingDamage);
 		}
 	}
+}
 
-	//attribute data changes from GameplayEffect
-	/*if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+void UAuraAttributeSet::ShowFloatingDamage(const FEffectProperties& Props, float Damage) const
+{
+	//only show damage text if not self damage
+	if (Props.SourceCharacter != Props.TargetCharacter)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Health from GetHealth(): %f"), GetHealth());
-		//log how muh changing the health
-		UE_LOG(LogTemp, Warning, TEXT("Magnitude: %f"), Data.EvaluatedData.Magnitude);
-	}*/
+		if (AAuraPlayerController* PlayerController = Cast<AAuraPlayerController>(UGameplayStatics::GetPlayerController(Props.SourceCharacter, 0)))
+		{
+			PlayerController->ShowDamageNumber(Damage, Props.TargetCharacter);
+		}
+
+
+	}
 }
